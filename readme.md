@@ -88,4 +88,4 @@ Take a look at the included unit-tests for further guidance.
 
 [homepage]: http://www.unterrainer.info
 [coding]: http://www.unterrainer.info/Home/Coding
-[github] : https://github.com/UnterrainerInformatik/threadpool
+[github]: https://github.com/UnterrainerInformatik/threadpool
