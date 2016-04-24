@@ -64,7 +64,10 @@
     <Compile Include="WorkItemState.cs" />
     <Compile Include="WorkItemStateTypeless.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="LICENSE" />
+    <None Include="readme.md" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="lib\LockFreeQueue.dll" />
     <Content Include="lib\nunit.framework.dll" />

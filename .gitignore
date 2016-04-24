@@ -99,3 +99,4 @@ ThrobaxTD/ThrobaxTD/ThrobaxTD.Linux.csproj
 ThrobaxTD/TiledLevel/TiledLevel.Linux.csproj
 ThrobaxTD/Utilities/Utilities.Linux.csproj
 ThrobaxTD/WindGenerator/WindGenerator.Linux.csproj
+*.sln
