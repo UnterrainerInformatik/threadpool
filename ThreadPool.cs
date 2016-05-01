@@ -25,9 +25,9 @@
 // For more information, please refer to <http://unlicense.org>
 // ***************************************************************************
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
-using LockFreeQueue;
 
 namespace ThreadPooling
 {
@@ -50,11 +50,11 @@ namespace ThreadPooling
 
         private bool isDisposeDoneWorkItemsAutomatically;
         private readonly Queue<SingleThreadRunner> threads;
-        private readonly LockFreeQueue<SingleThreadRunner> threadsIdle;
+        private readonly ConcurrentQueue<SingleThreadRunner> threadsIdle;
         private int threadsWorking;
-        private readonly LockFreeQueue<WorkItem> workItemQueue = new LockFreeQueue<WorkItem>();
+        private readonly ConcurrentQueue<WorkItem> workItemQueue = new ConcurrentQueue<WorkItem>();
 
-        private readonly LockFreeQueue<WorkItem> returnedWorkItems = new LockFreeQueue<WorkItem>();
+        private readonly ConcurrentQueue<WorkItem> returnedWorkItems = new ConcurrentQueue<WorkItem>();
         private bool shutDownSignaled;
         private readonly object lockObjectShutDownSignaled = new object();
 
@@ -91,7 +91,7 @@ namespace ThreadPooling
         {
             NumberOfThreads = numberOfThreads;
             threads = new Queue<SingleThreadRunner>();
-            threadsIdle = new LockFreeQueue<SingleThreadRunner>();
+            threadsIdle = new ConcurrentQueue<SingleThreadRunner>();
 
             // allocate threads...
             for (var i = 0; i < NumberOfThreads; i++)
@@ -113,11 +113,9 @@ namespace ThreadPooling
         /// </summary>
         public void ClearWorkItemQueue()
         {
-            var wi = workItemQueue.Dequeue();
-            while (wi != null)
-            {
-                wi = workItemQueue.Dequeue();
-            }
+            WorkItem wi;
+            while (workItemQueue.TryDequeue(out wi))
+            {}
         }
 
         /// <summary>
@@ -147,9 +145,8 @@ namespace ThreadPooling
         internal void EnqueueWorkItemInternal(WorkItem workItem)
         {
             // look for an idle worker...
-            var singleThreadRunner = threadsIdle.Dequeue();
-            Thread.MemoryBarrier();
-            if (singleThreadRunner != null)
+            SingleThreadRunner singleThreadRunner;
+            if (threadsIdle.TryDequeue(out singleThreadRunner))
             {
                 // hand over the work item...
                 workItem.SingleThreadRunner = singleThreadRunner;
@@ -185,8 +182,8 @@ namespace ThreadPooling
 
             if (!shutDownSignaled && isGetNewOne)
             {
-                var workItem = workItemQueue.Dequeue();
-                if (workItem != null)
+                WorkItem workItem;
+                if (workItemQueue.TryDequeue(out workItem))
                 {
                     workItem.SingleThreadRunner = singleThreadRunner;
                     return workItem;
@@ -202,8 +199,8 @@ namespace ThreadPooling
 
         private WorkItem GetWorkItem(CallbackFunction asyncCallback)
         {
-            var workItem = returnedWorkItems.Dequeue();
-            if (workItem == null)
+            WorkItem workItem;
+            if (!returnedWorkItems.TryDequeue(out workItem))
             {
                 workItem = new WorkItem();
                 workItem.WorkItemStateTypeless = new WorkItemStateTypeless(workItem);
@@ -246,10 +243,8 @@ namespace ThreadPooling
         public void ClearWorkItemCache()
         {
             WorkItem w;
-            do
-            {
-                w = returnedWorkItems.Dequeue();
-            } while (w != null);
+            while(returnedWorkItems.TryDequeue(out w))
+            {}
         }
 
         /// <summary>
